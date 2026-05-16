@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'about_screen.dart';
 
 class Note {
@@ -18,20 +19,43 @@ class _NotesScreenState extends State<NotesScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<Note> _notes = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadNotes();
+  }
+
+  Future<void> _loadNotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final texts = prefs.getStringList('note_texts') ?? [];
+    final dates = prefs.getStringList('note_dates') ?? [];
+    setState(() {
+      _notes.clear();
+      for (int i = 0; i < texts.length; i++) {
+        _notes.add(Note(text: texts[i], date: dates[i]));
+      }
+    });
+  }
+
+  Future<void> _saveNotes() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('note_texts', _notes.map((n) => n.text).toList());
+    await prefs.setStringList('note_dates', _notes.map((n) => n.date).toList());
+  }
+
   void _addNote() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     setState(() {
-      _notes.insert(0, Note(
-        text: text,
-        date: _formattedDate(),
-      ));
+      _notes.insert(0, Note(text: text, date: _formattedDate()));
       _controller.clear();
     });
+    _saveNotes();
   }
 
   void _deleteNote(int index) {
     setState(() => _notes.removeAt(index));
+    _saveNotes();
   }
 
   String _formattedDate() {

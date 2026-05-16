@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'about_screen.dart';
 
 class QuoteScreen extends StatefulWidget {
@@ -9,7 +11,7 @@ class QuoteScreen extends StatefulWidget {
 }
 
 class _QuoteScreenState extends State<QuoteScreen> {
-  static const List<Map<String, String>> _quotes = [
+  static const List<Map<String, String>> _localQuotes = [
     {'text': 'Ученье — свет, а неученье — тьма.', 'author': 'Русская пословица'},
     {'text': 'Не откладывай на завтра то, что можно сделать сегодня.', 'author': 'Бенджамин Франклин'},
     {'text': 'Дорогу осилит идущий.', 'author': 'Русская пословица'},
@@ -19,18 +21,53 @@ class _QuoteScreenState extends State<QuoteScreen> {
     {'text': 'Терпение и труд всё перетрут.', 'author': 'Русская пословица'},
   ];
 
-  late Map<String, String> _currentQuote;
+  String _quoteText = '';
+  String _quoteAuthor = '';
+  bool _isLoading = false;
+  String _source = 'local';
 
   @override
   void initState() {
     super.initState();
     final dayIndex = DateTime.now().weekday - 1;
-    _currentQuote = _quotes[dayIndex];
+    _quoteText = _localQuotes[dayIndex]['text']!;
+    _quoteAuthor = _localQuotes[dayIndex]['author']!;
   }
 
-  void _showDailyQuote() {
-    final dayIndex = DateTime.now().weekday - 1;
-    setState(() => _currentQuote = _quotes[dayIndex]);
+  Future<void> _fetchRandomQuote() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await http
+          .get(Uri.parse(
+              'https://api.forismatic.com/api/1.0/?method=getQuote&lang=ru&format=json'))
+          .timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final text = (data['quoteText'] as String?)?.trim() ?? '';
+        final author = (data['quoteAuthor'] as String?)?.trim() ?? '';
+        if (text.isNotEmpty) {
+          setState(() {
+            _quoteText = text;
+            _quoteAuthor = author.isEmpty ? 'Автор неизвестен' : author;
+            _source = 'api';
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+    // Fallback — случайная локальная цитата
+    final index = DateTime.now().millisecondsSinceEpoch % _localQuotes.length;
+    setState(() {
+      _quoteText = _localQuotes[index]['text']!;
+      _quoteAuthor = _localQuotes[index]['author']!;
+      _source = 'local';
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Нет связи — показана локальная цитата')),
+      );
+    }
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -57,24 +94,30 @@ class _QuoteScreenState extends State<QuoteScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
-                onPressed: _showDailyQuote,
-                child: const Text('Цитата дня'),
+                onPressed: _isLoading ? null : _fetchRandomQuote,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Новая цитата'),
               ),
               const SizedBox(height: 32),
               Text(
-                '«${_currentQuote['text']}»',
+                '«$_quoteText»',
                 style: const TextStyle(fontSize: 20, fontStyle: FontStyle.italic),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
-                '— ${_currentQuote['author']}',
+                '— $_quoteAuthor',
                 style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 24),
-              const Text(
-                '7 цитат — каждый день своя',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+              Text(
+                _source == 'api' ? 'Источник: forismatic.com' : '7 цитат — каждый день своя',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
             ],
           ),

@@ -1,5 +1,5 @@
 name: book_notes_app
-description: Заметки дня + цитата — учебный проект Flutter (ЛР 1–7), Волошин.
+description: Заметки дня + цитата, Волошин.
 publish_to: "none"
 version: 1.0.0+1
 
@@ -9,9 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
-  shared_preferences: ^2.3.3
-  provider: ^6.1.2
+  cupertino_icons: ^1.0.6
+  shared_preferences: ^2.2.2
+  http: ^1.2.0
 
 dev_dependencies:
   flutter_test:

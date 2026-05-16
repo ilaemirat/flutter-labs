@@ -1,3 +1,31 @@
-# В репозиторий ЛР2 попадает только README.md.
-# Папку Flutter пока не коммитим (будет с ЛР3).
-
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+pubspec.lock
+# IDE
+.idea/
+*.iml
+.vscode/
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/gradle/wrapper/gradle-wrapper.jar
+**/android/gradlew
+**/android/gradlew.bat
+# iOS
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Runner/GeneratedPluginRegistrant.h
+**/ios/Runner/GeneratedPluginRegistrant.m
+# macOS
+**/macos/Flutter/ephemeral/
+# Misc
+*.log
+.DS_Store
